@@ -131,14 +131,6 @@ void process_packet()
 		ses.requirenext = 0;
 	}
 
-	/* Kindly the protocol authors gave all the preauth packets type values
-	 * less-than-or-equal-to 60 ( == MAX_UNAUTH_PACKET_TYPE ).
-	 * NOTE: if the protocol changes and new types are added, revisit this
-	 * assumption */
-	// if ( !ses.authstate.authdone && type > MAX_UNAUTH_PACKET_TYPE ) {
-	// 	dropbear_exit("Received message %d before userauth", type);
-	// }
-
 	for (i = 0;; i++)
 	{
 		if (ses.packettypes[i].type == 0)
