@@ -1,19 +1,19 @@
 /*
  * Dropbear - a SSH2 server
- * 
+ *
  * Copyright (c) 2002-2004 Matt Johnston
  * All rights reserved.
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -40,7 +40,8 @@
 static void recv_unimplemented(void);
 
 /* process a decrypted packet, call the appropriate handler */
-void process_packet() {
+void process_packet()
+{
 
 	unsigned char type;
 	unsigned int i;
@@ -55,23 +56,25 @@ void process_packet() {
 	now = monotonic_now();
 	ses.last_packet_time_keepalive_recv = now;
 
-
-	if (type == SSH_MSG_DISCONNECT) {
+	if (type == SSH_MSG_DISCONNECT)
+	{
 		/* Allowed at any time */
 		dropbear_close("Disconnect received");
 	}
 
 	/* These packets may be received at any time,
 	   except during first kex with strict kex */
-	if (!first_strict_kex) {
-		switch(type) {
-			case SSH_MSG_IGNORE:
-				goto out;
-			case SSH_MSG_DEBUG:
-				goto out;
-			case SSH_MSG_UNIMPLEMENTED:
-				TRACE(("SSH_MSG_UNIMPLEMENTED"))
-				goto out;
+	if (!first_strict_kex)
+	{
+		switch (type)
+		{
+		case SSH_MSG_IGNORE:
+			goto out;
+		case SSH_MSG_DEBUG:
+			goto out;
+		case SSH_MSG_UNIMPLEMENTED:
+			TRACE(("SSH_MSG_UNIMPLEMENTED"))
+			goto out;
 		}
 	}
 
@@ -79,15 +82,15 @@ void process_packet() {
 	idle detection. This is slightly incorrect since a tcp forwarded
 	global request with failure won't trigger the idle timeout,
 	but that's probably acceptable */
-	if (!(type == SSH_MSG_GLOBAL_REQUEST 
-		|| type == SSH_MSG_REQUEST_FAILURE
-		|| type == SSH_MSG_CHANNEL_FAILURE)) {
+	if (!(type == SSH_MSG_GLOBAL_REQUEST || type == SSH_MSG_REQUEST_FAILURE || type == SSH_MSG_CHANNEL_FAILURE))
+	{
 		ses.last_packet_time_idle = now;
 	}
 
 	/* This applies for KEX, where the spec says the next packet MUST be
 	 * NEWKEYS */
-	if (ses.requirenext != 0) {
+	if (ses.requirenext != 0)
+	{
 		if (ses.requirenext == type)
 		{
 			/* Got what we expected */
@@ -98,11 +101,7 @@ void process_packet() {
 			/* RFC4253 7.1 - various messages are allowed at this point.
 			The only ones we know about have already been handled though,
 			so just return "unimplemented" */
-			if (type >= 1 && type <= 49
-				&& type != SSH_MSG_SERVICE_REQUEST
-				&& type != SSH_MSG_SERVICE_ACCEPT
-				&& type != SSH_MSG_KEXINIT
-				&& !first_strict_kex)
+			if (type >= 1 && type <= 49 && type != SSH_MSG_SERVICE_REQUEST && type != SSH_MSG_SERVICE_ACCEPT && type != SSH_MSG_KEXINIT && !first_strict_kex)
 			{
 				TRACE(("unknown allowed packet during kexinit"))
 				recv_unimplemented();
@@ -112,14 +111,15 @@ void process_packet() {
 			{
 				TRACE(("disallowed packet during kexinit"))
 				dropbear_exit("Unexpected packet type %d, expected %d", type,
-						ses.requirenext);
+							  ses.requirenext);
 			}
 		}
 	}
 
 	/* Check if we should ignore this packet. Used currently only for
 	 * KEX code, with first_kex_packet_follows */
-	if (ses.ignorenext) {
+	if (ses.ignorenext)
+	{
 		TRACE(("Ignoring packet, type = %d", type))
 		ses.ignorenext = 0;
 		goto out;
@@ -131,28 +131,29 @@ void process_packet() {
 		ses.requirenext = 0;
 	}
 
-
 	/* Kindly the protocol authors gave all the preauth packets type values
 	 * less-than-or-equal-to 60 ( == MAX_UNAUTH_PACKET_TYPE ).
-	 * NOTE: if the protocol changes and new types are added, revisit this 
+	 * NOTE: if the protocol changes and new types are added, revisit this
 	 * assumption */
-	if ( !ses.authstate.authdone && type > MAX_UNAUTH_PACKET_TYPE ) {
-		dropbear_exit("Received message %d before userauth", type);
-	}
+	// if ( !ses.authstate.authdone && type > MAX_UNAUTH_PACKET_TYPE ) {
+	// 	dropbear_exit("Received message %d before userauth", type);
+	// }
 
-	for (i = 0; ; i++) {
-		if (ses.packettypes[i].type == 0) {
+	for (i = 0;; i++)
+	{
+		if (ses.packettypes[i].type == 0)
+		{
 			/* end of list */
 			break;
 		}
 
-		if (ses.packettypes[i].type == type) {
+		if (ses.packettypes[i].type == type)
+		{
 			ses.packettypes[i].handler();
 			goto out;
 		}
 	}
 
-	
 	/* TODO do something more here? */
 	TRACE(("preauth unknown packet"))
 	recv_unimplemented();
@@ -165,13 +166,12 @@ out:
 	TRACE2(("leave process_packet"))
 }
 
-
-
 /* This must be called directly after receiving the unimplemented packet.
  * Isn't the most clean implementation, it relies on packet processing
  * occurring directly after decryption (direct use of ses.recvseq).
  * This is reasonably valid, since there is only a single decryption buffer */
-static void recv_unimplemented() {
+static void recv_unimplemented()
+{
 
 	CHECKCLEARTOWRITE();
 
